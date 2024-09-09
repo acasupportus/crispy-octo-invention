@@ -1,0 +1,48 @@
+name: Trigger auto deployment for scroot-4eaf193c
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/scroot-4eaf193c-AutoDeployTrigger-6a0c7dfd-6727-47d3-be48-074d5d0c1782.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.SCROOT4EAF193C_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.SCROOT4EAF193C_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.SCROOT4EAF193C_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          registryUrl: cappsinttestregistryprivate.azurecr.io
+          registryUsername: ${{ secrets.SCROOT4EAF193C_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.SCROOT4EAF193C_REGISTRY_PASSWORD }}
+          containerAppName: scroot-4eaf193c
+          resourceGroup: cappsint-eastus-cni-dedicated
+          imageToBuild: cappsinttestregistryprivate.azurecr.io/scroot-4eaf193c:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
